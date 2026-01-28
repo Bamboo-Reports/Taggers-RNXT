@@ -60,12 +60,12 @@ function classifyTitle(rawTitle) {
   // Priority-ordered level patterns (higher index => lower priority)
   const levelPatterns = [
     {level: "CXO", re: /\b(ceo|cfo|cto|cio|cmo|coo|cso|chro|cpo|clo|cdo|ciso|cno|cco|chief\s+[a-z]+|group chief|chief|chair(man|woman)?|c-suite|c level|c-level)\b/},
-    {level: "VP",  re: /\b(executive vice president|senior vice president|associate vice president|assistant vice president|vice president|president|vice-?president|vp|v\.p\.|evp|svp|avp)\b/},
+    {level: "VP",  re: /\b(executive vice president|senior vice president|dvp|associate vice president|assistant vice president|vice president|president|vice-?president|vp|v\.p\.|evp|svp|avp)\b/},
     {level: "Head",re: /\b(global head|regional head|branch head|country head|business head|circle head|head of|head)\b/},
-    {level: "Director", re: /\b(executive director|managing director|senior director|associate director|assistant director|director|managing partner|partner|^md$|\bmd\b)\b/},
-    {level: "Manager", re: /\b(assistant general manager|general manager|assistant gm|agm|dgm|gm\b|\bmanager\b|senior manager|branch manager|country manager|national manager)\b/},
+    {level: "Director", re: /\b(executive director|managing director|Member Board of Directors|Directors|senior director|associate director|assistant director|director|managing partner|partner|^md$|\bmd\b)\b/},
+    {level: "Manager", re: /\b(assistant general manager|sr. mgr|mgr|general manager|assistant gm|agm|dgm|gm\b|\bmanager\b|senior manager|branch manager|country manager|national manager)\b/},
     {level: "Lead", re: /\b(team lead|lead engineer|lead|tech lead|technical lead)\b/},
-    {level: "Others", re: /\b(analyst|specialist|engineer|associate|coordinator|officer|consultant|representative|advisor|staff|intern|trainee|junior|entry-?level)\b/}
+    {level: "Others", re: /\b(analyst|specialist|engineer|associate|coordinator|officer|consultant|representative|advisor|staff|intern|trainee|executive assistant|assistant|junior|entry-?level)\b/}
   ];
 
   // Find first (highest-priority) level that matches
