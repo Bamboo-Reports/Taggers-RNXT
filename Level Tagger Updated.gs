@@ -1,6 +1,6 @@
 /**
  * Level Tagger - Apps Script (updated)
- * - Reads Titles from TITLE_COL (default A)
+ * - Reads Titles from TITLE_COL (default C = 3)
  * - Writes Level to OUTPUT_COL (default F = 6)
  * - Writes Confidence Score to CONF_COL (default G = 7)
  * - Writes Exhaustive list of detected matches to EXHAUSTIVE_COL (default H = 8)
@@ -23,9 +23,7 @@ function tagLevels() {
   }
 
   // CONFIG - change if your sheet layout is different
-  const TITLE_COL = 3;      // C
-  
-  
+  const TITLE_COL = 3;      // C = 3 (where Titles live)
   const OUTPUT_COL = 6;     // F = 6 (Level)
   const CONF_COL = 7;       // G = 7 (Confidence)
   const EXHAUSTIVE_COL = 8; // H = 8 (Exhaustive matches)
@@ -43,7 +41,8 @@ function tagLevels() {
 
   const results = titles.map(t => {
     const res = classifyTitle(t);
-    return [res.level, res.confidence.toFixed(2), res.exhaustive];
+    // ensure confidence appears as numeric with two decimals
+    return [res.level, Number(res.confidence).toFixed(2), res.exhaustive];
   });
 
   // write Level, Confidence, Exhaustive list to F, G, H respectively
@@ -81,17 +80,18 @@ function classifyTitle(rawTitle) {
   // Level definitions in priority order (top -> highest priority)
   // Each has a 'pattern' (string) and a base weight for confidence
   const levelDefs = [
-    {level: "CXO", pattern: "\\b(ceo|cfo|cto|cio|cmo|coo|cso|chro|cpo|clo|cdo|ciso|cno|cco|group chief|chief\\s+[a-z]+|chair(man|woman)?|c-suite|c level|c-level|president|vice-?chair)\\b", weight: 0.99},
-    {level: "VP",  pattern: "\\b(executive vice president|senior vice president|associate vice president|assistant vice president|vice president|vice-?president|vp|v\\.p\\.|evp|svp|avp)\\b", weight: 0.92},
-    {level: "Head",pattern: "\\b(global head|regional head|branch head|country head|business head|circle head|head of|\\bhead\\b)\\b", weight: 0.88},
-    {level: "Director", pattern: "\\b(executive director|managing director|member board of directors|directors|senior director|associate director|assistant director|director|managing partner|partner|\\bmd\\b)\\b", weight: 0.82},
+    // CXO: include founder / co-founder
+    {level: "CXO", pattern: "\\b(ceo|cfo|cto|CIDO|CRO|coes|ceo|cio|cmo|coo|cso|chro|cbo|cpo|clo|cdo|ciso|cno|cco|founder|co[- ]?founder|group chief|chief\\s+[a-z]+|chair(man|woman)?|c-suite|c level|c-level)\\b", weight: 0.99},
+    {level: "VP",  pattern: "\\b(executive vice president|senior vice president|associate vice president|assistant vice president|vice president|vice-?president|vp|president|v\\.p\\.|evp|svp|avp)\\b", weight: 0.92},
+    {level: "Head",pattern: "\\b(global head|regional head|HOD|head|branch head|country head|business head|circle head|head of|\\bhead\\b)\\b", weight: 0.88},
+    {level: "Director", pattern: "\\b(executive director|managing director|member board of directors|directors|senior director|director|associate director|assistant director|director|managing partner|partner|\\bmd\\b)\\b", weight: 0.82},
     // GM category (user requested breakdown of all GM-like tokens -> "GM")
     {level: "GM", pattern: "\\b(assistant general manager|assistant gm|chief general manager|general manager|agm|dgm|deputy general manager|gm\\b)\\b", weight: 0.86},
-    // Senior Manager explicit
-    {level: "Senior Manager", pattern: "\\b(senior manager|sr\\s*manager|sr\\.? manager)\\b", weight: 0.80},
+    // Senior Manager explicit: allow intervening words like "senior marketing manager"
+    {level: "Senior Manager", pattern: "\\b(senior(?:\\s+\\w+)*\\s+manager|sr\\.?(?:\\s+\\w+)*\\s+manager)\\b", weight: 0.80},
     // Generic Manager (only if no GM or Senior Manager matched)
-    {level: "Manager", pattern: "\\b(manager|mgr|mngr|branch manager|country manager|national manager|sales manage|manage)\\b", weight: 0.70},
-    {level: "Lead", pattern: "\\b(team lead|lead engineer|\\blead\\b|tech lead|technical lead)\\b", weight: 0.60},
+    {level: "Manager", pattern: "\\b(manager|mgr|mngr|branch manager|country manager|national manager|sales manager|\\bmanage\\b)\\b", weight: 0.70},
+    {level: "Lead", pattern: "\\b(team lead|lead|lead engineer|\\blead\\b|tech lead|technical lead)\\b", weight: 0.60},
     {level: "Others", pattern: "\\b(analyst|specialist|engineer|associate|coordinator|officer|consultant|representative|advisor|staff|intern|trainee|executive assistant|assistant|junior|entry-?level)\\b", weight: 0.45}
   ];
 
@@ -163,6 +163,12 @@ function normalize(s) {
 
   // Collapse multiple spaces
   s = s.replace(/\s+/g, " ").trim();
+
+  // Merge spaced acronyms like "c t o" -> "cto", "a v p" -> "avp", "a g m" -> "agm"
+  // match sequences of single letters separated by spaces up to length 4
+  s = s.replace(/\b(?:[a-z]\s+){1,3}[a-z]\b/g, function(m){
+    return m.replace(/\s+/g, "");
+  });
 
   // abbreviations normalization (basic)
   s = s.replace(/\bsr\b|\bsr\.\b/g, "senior");
